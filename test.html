@@ -1,5 +1,6 @@
 <!doctype html>
 <html>
+
 <head>
     <style>
         #container {
@@ -11,73 +12,108 @@
     </style>
     <script src="https://d3js.org/d3.v4.min.js"></script>
 </head>
+
 <body>
-<div id="container"></div>
-<script>
-    var svg = d3.select("body")
-                .append("svg")
-                .attr("width", 500)
-                .attr("height", 500);
+    <div id="container"></div>
+    <p></p>
+    <script>
+        var svg = d3.select("body")
+            .append("svg")
+            .attr("width", 500)
+            .attr("height", 500);
 
 
-    var bar1 = svg.append("rect")
-                .attr("fill", "black")
-                .attr("x", 150)
-                .attr("y", 20)
-                .attr("height", 50)
-                .attr("width", 50)
-
-    var bar2 = svg.append("rect")
-                .attr("fill", "black")
-                .attr("x", 300)
-                .attr("y", 20)
-                .attr("height", 50)
-                .attr("width", 50)
-
-    
-
-    d3.selectAll("div")
-      .on("mouseover", function(){
-          d3.select(this)
-            .style("background-color", "red");
-            update();
-          // Get current event info
-          console.log(d3.event);
-          
-          // Get x & y co-ordinates
-          console.log(d3.mouse(this));
-      })
-      .on("mouseout", function(){
-          d3.select(this)
-            .style("background-color", "black")
-            back();
-      });
-
-    function update() {
-        bar1.transition()
-            .ease(d3.easeBounce)
-            .duration(1000)
-            .attr("height",150)
-            .attr("width", 150)
-
-        bar2.transition()
-            .ease(d3.easeLinear)
-            .duration(400)
-            .attr("fill", "white")
-    }
-    
-    function back() {
-        bar1.transition()
-            .ease(d3.easePoly)
-            .duration(1000)
-            .attr("height",50)
+        var bar1 = svg.append("rect")
+            .attr("fill", "black")
+            .attr("x", 150)
+            .attr("y", 20)
+            .attr("height", 50)
             .attr("width", 50)
 
-        bar2.transition()
-            .ease(d3.easePoly)
-            .duration(1000)
+        var bar2 = svg.append("rect")
             .attr("fill", "black")
-    }
-</script>
+            .attr("x", 300)
+            .attr("y", 20)
+            .attr("height", 50)
+            .attr("width", 50)
+
+
+
+        d3.selectAll("div")
+            .on("mouseover", function () {
+                d3.select(this)
+                    .style("background-color", "red");
+                update();
+                // Get current event info
+                console.log(d3.event);
+
+                // Get x & y co-ordinates
+                console.log(d3.mouse(this));
+            })
+            .on("mouseout", function () {
+                d3.select(this)
+                    .style("background-color", "black")
+                back();
+            });
+
+        function update() {
+            bar1.transition()
+                .ease(d3.easeBounce)
+                .duration(1000)
+                .attr("height", 150)
+                .attr("width", 150)
+
+            bar2.transition()
+                .ease(d3.easeLinear)
+                .duration(400)
+                .attr("fill", "white")
+        }
+
+        function back() {
+            bar1.transition()
+                .ease(d3.easePoly)
+                .duration(1000)
+                .attr("height", 50)
+                .attr("width", 50)
+
+            bar2.transition()
+                .ease(d3.easePoly)
+                .duration(1000)
+                .attr("fill", "black")
+        }
+
+        /* can't load local files, need webserver
+        d3.json("./data/users.json", function (error, dataa) {
+            if (error) {
+                return console.warn(error);
+            }
+
+            d3.select("body")
+                .selectAll("p")
+                .data(dataa)
+                .enter()
+                .append("p")
+                .text(function (d) {
+                    return d.name + ", " + d.age;
+                })
+        });*/
+
+
+        var data = [4, 1, 6, 2, 8, 9];
+        var body = d3.select("body")
+            .selectAll("span")
+            .data(data)
+            .enter().append("span")
+            .style('color', function (d) {
+                if (d % 2 === 0) {
+                    return "green";
+                } else {
+                    return "red";
+                }
+            })
+            .text(function (d) { return d + " "; });
+
+    </script>
 </body>
+
 </html>
