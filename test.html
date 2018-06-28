@@ -99,13 +99,14 @@
         });*/
 
 
-        var data = [8, 42, 24, 7, 51, 3, 14, 16];
+        var data = [8, 42, 24, 7, 51, 3, 14, 16, 32];
+
         var body = d3.select("body")
             .selectAll("span")
             .data(data)
             .enter().append("span")
             .style('color', function (d) {
-                if (d % 2 === 0) {
+                if (d < 30) { //test cap
                     return "green";
                 } else {
                     return "red";
