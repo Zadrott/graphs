@@ -1,83 +1,143 @@
 <!doctype html>
 <html>
+
 <head>
     <style>
-        .bar {
-       // fill: steelblue;
+        body {
+            background-color: #6F6F6E;
+            font: arial;
+        }
+
+        .line {
+            stroke: #460D0F;
         }
     </style>
     <script src="https://d3js.org/d3.v4.min.js"></script>
-<body>
-<svg width="600" height="500"></svg>
-<script>
 
-    var svg = d3.select("svg"),
-        margin = 200,
-        width = svg.attr("width") - margin,
-        height = svg.attr("height") - margin
+    <body>
+        <div id="myGraph"></div>
+        <svg width="600" height="500"></svg>
+        <script>
+            // raw data
+            var dataRaw = {}
 
-    svg.append("text")
-       .attr("transform", "translate(100,0)")
-       .attr("x", 50)
-       .attr("y", 50)
-       .attr("font-size", "24px")
-       .text("XYZ Foods Stock Price")
+            // format data
+            // todo
 
-    var xScale = d3.scaleBand().range([0, width]).padding(0.4),
-        yScale = d3.scaleLinear().range([height, 0]);
+            var data = [{ semaine: "1", nbBug: 42, limite: 30 },
+            { semaine: "2", nbBug: 32, limite: 30 },
+            { semaine: "3", nbBug: 25, limite: 30 },
+            { semaine: "4", nbBug: 12, limite: 30 },
+            { semaine: "5", nbBug: 28, limite: 30 },
+            { semaine: "6", nbBug: 3, limite: 30 },
+            { semaine: "7", nbBug: 7, limite: 15 },
+            { semaine: "8", nbBug: 12, limite: 15 },
+            { semaine: "9", nbBug: 2, limite: 15 },
+            { semaine: "10", nbBug: 1, limite: 10 },
+            { semaine: "11", nbBug: 3, limite: 10 },
+            { semaine: "12", nbBug: 8, limite: 10 },
+            { semaine: "13", nbBug: 11, limite: 10 }];
 
-    var g = svg.append("g")
-               .attr("transform", "translate(" + 100 + "," + 100 + ")");
+            function drawLine(ext) { //simplification possible ?
+                ext.g.selectAll(".toto")
+                    .data(data)
+                    .enter().append("line")
+                    .attr("x1", (d) => {
+                        if (ext.xScale(d.semaine) == ext.xScale(data[0].semaine))
+                            return 0
+                        return ext.xScale(d.semaine) - ext.paddingRatio * ext.xScale.step() / 2
+                    })
+                    .attr("y1", d => ext.yScale(d.limite))
+                    .attr("x2", (d) => {
+                        return ext.xScale(d.semaine) + ext.xScale.bandwidth() + ext.paddingRatio * ext.xScale.step() / 2;
+                    })
+                    .attr("y2", d => ext.yScale(d.limite))
+                    .attr("style", "stroke:rgb(255,255,0);stroke-width:2")
+            };
 
-   // d3.csv("http://www.mocky.io/v2/5b34aa6b2f00007400375fea", function(error, data) {
-        // if (error) {
-        //     throw error;
-        // }
+            function drawGraph(configGraph) {
+                const paddingRatio = 0.4;
+                var svg = d3.select("svg"),
+                    margin = 200,
+                    width = svg.attr("width") - margin,
+                    height = svg.attr("height") - margin;
 
-            var data = [8, 42, 24, 7, 51, 3, 14, 16];
+                svg.append("text")
+                    .attr("class", "title")
+                    .attr("transform", "translate(100,0)")
+                    .attr("x", 50)
+                    .attr("y", 50)
+                    .attr("font-size", "24px")
+                    .text(configGraph.title);
 
-        xScale.domain(data.map(function(d,index) { return index; }));
-        yScale.domain([0, d3.max(data, function(d) { return d; })]);
+                var g = svg.append("g")
+                    .attr("class", "graph")
+                    .attr("transform", "translate(" + 100 + "," + 100 + ")");
 
-        g.append("g")
-         .attr("transform", "translate(0," + height + ")")
-         .call(d3.axisBottom(xScale))
-         .append("text")
-         .attr("y", height - 250)
-         .attr("x", width - 100)
-         .attr("text-anchor", "end")
-         .attr("stroke", "black")
-         .text("Year");
 
-        g.append("g")
-         .call(d3.axisLeft(yScale).tickFormat(function(d){
-             return "$" + d;
-         })
-         .ticks(10))
-         .append("text")
-         .attr("transform", "rotate(-90)")
-         .attr("y", 6)
-         .attr("dy", "-5.1em")
-         .attr("text-anchor", "end")
-         .attr("stroke", "black")
-         .text("Stock Price");
+                var xScale = d3.scaleBand().range([0, width]).padding(paddingRatio),
+                    yScale = d3.scaleLinear().range([height, 0]);
 
-        g.selectAll(".bar")
-         .data(data)
-         .enter().append("rect")
-         .attr("class", "bar")
-         .attr("x", function(d,index) { return xScale(index); })
-         .attr("y", function(d) { return yScale(d); })
-         .attr("height", function(d) { return height -  yScale(d); })
-         .attr("width", xScale.bandwidth())
-         .attr("fill", function(d){
-             if(d < 20){
-                return "green";
-             }
-             return "red";
-         })
-        
-    // });
-</script>
-</body>
+                xScale.domain(data.map(function (d) { return d.semaine; }));
+                yScale.domain([0, d3.max(data, function (d) { return d.nbBug; })]);
+
+                g.append("g")
+                    .attr("class", "axis")
+                    .attr("transform", "translate(0," + height + ")")
+                    .call(d3.axisBottom(xScale))
+                    .append("text")
+                    .attr("y", height - 265)
+                    .attr("x", width - 10)
+                    .attr("text-anchor", "end")
+                    .text("Semaines");
+
+                g.append("g")
+                    .attr("class", "axis")
+                    .call(d3.axisLeft(yScale).tickFormat(function (d) {
+                        return d;
+                    })
+                        .ticks(10))
+                    .append("text")
+                    .attr("transform", "rotate(-90)")
+                    .attr("y", 6)
+                    .attr("dy", "-5.1em")
+                    .attr("text-anchor", "end")
+                    .text("Bugs");
+
+                g.selectAll(".bar")
+                    .data(data)
+                    .enter().append("rect")
+                    .attr("class", "bar")
+                    .attr("x", function (d) { return xScale(d.semaine); }) //TODO: fix scale
+                    .attr("y", function (d) { return yScale(d.nbBug); })
+                    .attr("height", function (d) { return height - yScale(d.nbBug); })
+                    .attr("width", xScale.bandwidth())
+                    .attr("fill", function (d) {
+                        if (d.nbBug < d.limite) {
+                            return configGraph.colors.good;
+                        }
+                        return configGraph.colors.bad;
+                    });
+
+                drawLine({
+                    g,
+                    xScale,
+                    yScale,
+                    paddingRatio
+                });
+
+                d3.selectAll("text").attr("fill", "white");
+
+
+            };
+
+            drawGraph({
+                data: data,
+                title: "Nombre de bugs hebdomadaires:",
+                colors: { good: "#C5C4C5", bad: "#BE1622" }
+            });
+
+        </script>
+    </body>
+
 </html>
