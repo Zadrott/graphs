@@ -18,11 +18,11 @@
         <div id="myGraph"></div>
         <svg width="600" height="500"></svg>
         <script>
-            // raw data
-            var dataRaw = {}
-
-            // format data
-            // todo
+            if (!Array.prototype.last) {
+                Array.prototype.last = function () {
+                    return this[this.length - 1];
+                };
+            };
 
             var data = [{ semaine: "1", nbBug: 42, limite: 30 },
             { semaine: "2", nbBug: 32, limite: 30 },
@@ -36,32 +36,70 @@
             { semaine: "10", nbBug: 1, limite: 10 },
             { semaine: "11", nbBug: 3, limite: 10 },
             { semaine: "12", nbBug: 8, limite: 10 },
-            { semaine: "13", nbBug: 11, limite: 10 }];
+            { semaine: "13", nbBug: 11, limite: 10 },
+            { semaine: "14", nbBug: 7, limite: 15 },
+            { semaine: "15", nbBug: 5, limite: 15 },
+            { semaine: "16", nbBug: 9, limite: 10 },
+            { semaine: "17", nbBug: 10, limite: 10 },
+            { semaine: "18", nbBug: 3, limite: 10 }
+            ];
 
-            function drawLine(ext) { //simplification possible ?
-                ext.g.selectAll(".toto")
-                    .data(data)
-                    .enter().append("line")
-                    .attr("x1", (d) => {
-                        if (ext.xScale(d.semaine) == ext.xScale(data[0].semaine))
-                            return 0
-                        return ext.xScale(d.semaine) - ext.paddingRatio * ext.xScale.step() / 2
-                    })
-                    .attr("y1", d => ext.yScale(d.limite))
-                    .attr("x2", (d) => {
-                        return ext.xScale(d.semaine) + ext.xScale.bandwidth() + ext.paddingRatio * ext.xScale.step() / 2;
-                    })
-                    .attr("y2", d => ext.yScale(d.limite))
-                    .attr("style", "stroke:rgb(255,255,0);stroke-width:2")
+            const paddingRatio = 0.4;
+            var svg = d3.select("svg"),
+                margin = 200,
+                width = svg.attr("width") - margin,
+                height = svg.attr("height") - margin,
+                xScale = d3.scaleBand().range([0, width]).padding(paddingRatio),
+                yScale = d3.scaleLinear().range([height, 0])
+                ;
+
+            xScale.domain(data.map(function (d) { return d.semaine; }));
+            yScale.domain([0, d3.max(data, function (d) { return d.nbBug; })]);
+
+
+            function removeRedondancy(data, selectParameter) {
+                var accuInit = { points: [], lastLimit: 0, lastPoint: { semaine: 0, limite: 0 } };
+
+                var formatedLimit = data.reduce((accu, item, index, array) => {
+                    if (selectParameter(item) != accu.lastLimit) {
+                        // add 2 point et set last limit
+                        point1 = accu.lastPoint;
+                        accu.points.push({ ...item, redondancy: [] });
+                        accu.lastLimit = selectParameter(item);
+
+                    } else {
+                        accu.points[accu.points.length - 1].redondancy.push(item);
+                    }
+                    accu.lastPoint = item;
+                    return accu;
+                }, accuInit);
+                return formatedLimit.points
+            }
+
+            function formatLimit(data) {
+                return removeRedondancy(data, i => i.limite).reduce((accu, item, index, array) => {
+                    var point1;
+                    if (index == 0) {
+                        point1 = "0," + yScale(item.redondancy.last().limite);
+                    } else
+                        point1 = xScale(item.semaine) - paddingRatio * xScale.step() / 2 + "," + yScale(item.limite);
+                    var point2 = xScale(item.redondancy.last().semaine) + xScale.bandwidth() + paddingRatio * xScale.step() / 2 + "," + yScale(item.redondancy.last().limite)
+                    accu += point1 + " " + point2 + "\n"
+                    return accu;
+                }, "");
+            }
+
+            console.log(removeRedondancy(data, i => i.limite));
+            console.log(formatLimit(data));
+
+            function drawPolyline(ext) {
+                svg.select(".graph")
+                    .append("polyline")
+                    .attr("points", formatLimit(data))
+                    .attr("style", "fill:none; stroke:rgb(255,255,0);stroke-width:1")
             };
 
             function drawGraph(configGraph) {
-                const paddingRatio = 0.4;
-                var svg = d3.select("svg"),
-                    margin = 200,
-                    width = svg.attr("width") - margin,
-                    height = svg.attr("height") - margin;
-
                 svg.append("text")
                     .attr("class", "title")
                     .attr("transform", "translate(100,0)")
@@ -74,12 +112,9 @@
                     .attr("class", "graph")
                     .attr("transform", "translate(" + 100 + "," + 100 + ")");
 
-
-                var xScale = d3.scaleBand().range([0, width]).padding(paddingRatio),
-                    yScale = d3.scaleLinear().range([height, 0]);
-
-                xScale.domain(data.map(function (d) { return d.semaine; }));
-                yScale.domain([0, d3.max(data, function (d) { return d.nbBug; })]);
+                drawPolyline({
+                    g
+                });
 
                 g.append("g")
                     .attr("class", "axis")
@@ -119,16 +154,7 @@
                         return configGraph.colors.bad;
                     });
 
-                drawLine({
-                    g,
-                    xScale,
-                    yScale,
-                    paddingRatio
-                });
-
                 d3.selectAll("text").attr("fill", "white");
-
-
             };
 
             drawGraph({
