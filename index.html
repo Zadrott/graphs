@@ -8,15 +8,15 @@
             font: arial;
         }
 
-        .line {
-            stroke: #460D0F;
+        svg {
+            display: inline-block;
         }
     </style>
     <script src="https://d3js.org/d3.v4.min.js"></script>
 
     <body>
         <div id="myGraph"></div>
-        <svg width="600" height="500"></svg>
+        <svg width="800" height="600"></svg>
         <script>
             if (!Array.prototype.last) {
                 Array.prototype.last = function () {
@@ -24,26 +24,36 @@
                 };
             };
 
-            var data = [{ semaine: "1", nbBug: 42, limite: 30 },
-            { semaine: "2", nbBug: 32, limite: 30 },
-            { semaine: "3", nbBug: 25, limite: 30 },
-            { semaine: "4", nbBug: 12, limite: 30 },
-            { semaine: "5", nbBug: 28, limite: 30 },
-            { semaine: "6", nbBug: 3, limite: 30 },
-            { semaine: "7", nbBug: 7, limite: 15 },
-            { semaine: "8", nbBug: 12, limite: 15 },
-            { semaine: "9", nbBug: 2, limite: 15 },
-            { semaine: "10", nbBug: 1, limite: 10 },
-            { semaine: "11", nbBug: 3, limite: 10 },
-            { semaine: "12", nbBug: 8, limite: 10 },
-            { semaine: "13", nbBug: 11, limite: 10 },
-            { semaine: "14", nbBug: 7, limite: 15 },
-            { semaine: "15", nbBug: 5, limite: 15 },
-            { semaine: "16", nbBug: 9, limite: 10 },
-            { semaine: "17", nbBug: 10, limite: 10 },
-            { semaine: "18", nbBug: 3, limite: 10 }
+            var data = [{ bug: "77045", jours: 150, seuilMax: 100, seuilMin: 21 },
+            { bug: "77829", jours: 150, seuilMax: 100, seuilMin: 21 },
+            { bug: "78287", jours: 140, seuilMax: 100, seuilMin: 21 },
+            { bug: "78478", jours: 110, seuilMax: 100, seuilMin: 21 },
+            { bug: "78593", jours: 80, seuilMax: 100, seuilMin: 21 },
+            { bug: "78624", jours: 75, seuilMax: 100, seuilMin: 21 },
+            { bug: "78643", jours: 70, seuilMax: 100, seuilMin: 21 },
+            { bug: "78685", jours: 65, seuilMax: 100, seuilMin: 21 },
+            { bug: "78713", jours: 61, seuilMax: 100, seuilMin: 21 },
+            { bug: "78805", jours: 50, seuilMax: 100, seuilMin: 21 },
+            { bug: "78823", jours: 45, seuilMax: 100, seuilMin: 21 },
+            { bug: "78848", jours: 42, seuilMax: 100, seuilMin: 21 },
+            { bug: "78901", jours: 30, seuilMax: 100, seuilMin: 21 },
+            { bug: "78908", jours: 30, seuilMax: 100, seuilMin: 21 },
+            { bug: "78934", jours: 25, seuilMax: 100, seuilMin: 21 },
+            { bug: "78936", jours: 27, seuilMax: 30, seuilMin: 10 },
+            { bug: "78940", jours: 25, seuilMax: 30, seuilMin: 10 },
+            { bug: "78964", jours: 21, seuilMax: 100, seuilMin: 21 },
+            { bug: "78979", jours: 20, seuilMax: 100, seuilMin: 21 },
+            { bug: "78999", jours: 18, seuilMax: 30, seuilMin: 10 },
+            { bug: "79000", jours: 17, seuilMax: 100, seuilMin: 21 },
+            { bug: "79019", jours: 15, seuilMax: 100, seuilMin: 21 }
             ];
 
+            var cfg = {
+                data: data,
+                selectedWeek: "15",
+                title: "Modaris - Lead Time R&D - Bugs en cours:",
+                colors: { good: "#C5C4C5", bad: "#BE1622" }
+            };
             const paddingRatio = 0.4;
             var svg = d3.select("svg"),
                 margin = 200,
@@ -53,16 +63,16 @@
                 yScale = d3.scaleLinear().range([height, 0])
                 ;
 
-            xScale.domain(data.map(function (d) { return d.semaine; }));
-            yScale.domain([0, d3.max(data, function (d) { return d.nbBug; })]);
+            xScale.domain(data.map(function (d) { return d.bug; }));
+            yScale.domain([0, d3.max(data, function (d) { return d.jours; })]);
+
 
 
             function removeRedondancy(data, selectParameter) {
-                var accuInit = { points: [], lastLimit: 0, lastPoint: { semaine: 0, limite: 0 } };
+                var accuInit = { points: [], lastSeuilMax: 0, lastSeuilMin: 0, lastPoint: { bug: 0, seuilMax: 0, seuilMin: 0 } };
 
                 var formatedLimit = data.reduce((accu, item, index, array) => {
                     if (selectParameter(item) != accu.lastLimit) {
-                        // add 2 point et set last limit
                         point1 = accu.lastPoint;
                         accu.points.push({ ...item, redondancy: [] });
                         accu.lastLimit = selectParameter(item);
@@ -76,27 +86,35 @@
                 return formatedLimit.points
             }
 
-            function formatLimit(data) {
-                return removeRedondancy(data, i => i.limite).reduce((accu, item, index, array) => {
+            function computePath(data, selectX, selectY) {
+                return removeRedondancy(data, selectY).reduce((accu, item, index, array) => {
                     var point1;
                     if (index == 0) {
-                        point1 = "0," + yScale(item.redondancy.last().limite);
-                    } else
-                        point1 = xScale(item.semaine) - paddingRatio * xScale.step() / 2 + "," + yScale(item.limite);
-                    var point2 = xScale(item.redondancy.last().semaine) + xScale.bandwidth() + paddingRatio * xScale.step() / 2 + "," + yScale(item.redondancy.last().limite)
-                    accu += point1 + " " + point2 + "\n"
+                        point1 = "0," + yScale(selectY(item.redondancy.last()));
+                    }
+                    else {
+                        point1 = xScale(selectX(item)) + paddingRatio * xScale.step() / 2 + "," + yScale(selectY(item));
+                    }
+                    if (item.redondancy.length > 0) {
+                        var point2 = xScale(selectX(item.redondancy.last())) + xScale.bandwidth() + paddingRatio * xScale.step() / 2 + "," + yScale(selectY(item.redondancy.last()))
+                        accu += point1 + " " + point2 + "\n"
+                    }
+                    else {
+                        accu += point1 + "\n"
+                    }
                     return accu;
                 }, "");
+
             }
 
-            console.log(removeRedondancy(data, i => i.limite));
-            console.log(formatLimit(data));
+            console.log(removeRedondancy(data, i => i.seuilMin));
+            console.log(computePath(data, item => item.bug, item => item.seuilMax));
 
-            function drawPolyline(ext) {
+            function drawPolyline(style, path) {
                 svg.select(".graph")
                     .append("polyline")
-                    .attr("points", formatLimit(data))
-                    .attr("style", "fill:none; stroke:rgb(255,255,0);stroke-width:1")
+                    .attr("points", path)
+                    .attr("style", style)
             };
 
             function drawGraph(configGraph) {
@@ -112,9 +130,8 @@
                     .attr("class", "graph")
                     .attr("transform", "translate(" + 100 + "," + 100 + ")");
 
-                drawPolyline({
-                    g
-                });
+                drawPolyline("fill:none; stroke:yellow ;stroke-width:2; stroke-dasharray:12,8", computePath(data, item => item.bug, item => item.seuilMax));
+                drawPolyline("fill:none; stroke:blue ;stroke-width:2; stroke-dasharray:12,8", computePath(data, item => item.bug, item => item.seuilMin));
 
                 g.append("g")
                     .attr("class", "axis")
@@ -124,7 +141,7 @@
                     .attr("y", height - 265)
                     .attr("x", width - 10)
                     .attr("text-anchor", "end")
-                    .text("Semaines");
+                    .text("bugs");
 
                 g.append("g")
                     .attr("class", "axis")
@@ -137,32 +154,51 @@
                     .attr("y", 6)
                     .attr("dy", "-5.1em")
                     .attr("text-anchor", "end")
-                    .text("Bugs");
+                    .text("jours");
 
                 g.selectAll(".bar")
                     .data(data)
                     .enter().append("rect")
                     .attr("class", "bar")
-                    .attr("x", function (d) { return xScale(d.semaine); }) //TODO: fix scale
-                    .attr("y", function (d) { return yScale(d.nbBug); })
-                    .attr("height", function (d) { return height - yScale(d.nbBug); })
+                    .attr("x", function (d) { return xScale(d.bug); })
+                    .attr("y", function (d) { return yScale(d.jours); })
+                    .attr("height", function (d) { return height - yScale(d.jours); })
                     .attr("width", xScale.bandwidth())
                     .attr("fill", function (d) {
-                        if (d.nbBug < d.limite) {
+                        if (d.jours < d.seuilMax) {
                             return configGraph.colors.good;
                         }
                         return configGraph.colors.bad;
                     });
 
                 d3.selectAll("text").attr("fill", "white");
+
+                //   g.append("text")
+                //                     .attr("class", "title")
+                //                     .attr("transform", "translate(100,0)")
+                //                     .attr("x", 50)
+                //                     .attr("y", 50)
+                //                     .attr("font-size", "24px")
+                //                     .text("toto");
+
+                d3.selectAll(".bar")
+                    .on("mouseover", function (a, b, c) {
+                        d3.select(this)
+                            .attr("fill", "black")
+                    })
+                    .on("mouseout", function () {
+                        d3.select(this)
+                            .attr("fill", function (d) {
+                                if (d.jours < d.seuilMax) {
+                                    return cfg.colors.good;
+                                }
+                                return cfg.colors.bad;
+                            })
+                    });
             };
 
-            drawGraph({
-                data: data,
-                title: "Nombre de bugs hebdomadaires:",
-                colors: { good: "#C5C4C5", bad: "#BE1622" }
-            });
 
+            drawGraph(cfg);
         </script>
     </body>
 
