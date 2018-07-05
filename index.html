@@ -68,7 +68,7 @@
             }
 
             var cfg = {
-                data: formatData(rawData),// {x, y:{bars:[], lines:[]} }
+                data: formatData(rawData),  //{ x, y:{ bars:[], lines:[] } }
                 selectedBar: "15", //TODO: select bar pour navigation clavier ect
                 title: "Modaris - Lead Time R&D - Bugs en cours:",
                 colors: { prisEnCharge: "#BE1622", validation: "#878787", correction: "#C5C4C5", seuilMin: "rgba(0, 0, 255, 0.6)", seuilMax: "rgba(255, 255, 0, 0.6)" }
@@ -95,7 +95,7 @@
             yScale.domain([0, d3.max(cfg.data, computeMaxJours)]);
 
             function setColor(d, index) {
-                Object.keys(cfg.colors) //TODO: bar color
+                Object.keys(cfg.colors)
                 return cfg.colors[Object.keys(cfg.colors)[index]];
             }
 
@@ -137,15 +137,36 @@
 
             }
 
-            // console.log(removeRedondancy(cfg.data, i => i.y.lines[1]));
-            // console.log(computePath(cfg.data, item => item.x, item => item.y.lines[0]));
+            function drawAxis(group) {
+                group.append("g")
+                    .attr("class", "x_axis")
+                    .attr("transform", "translate(0," + height + ")")
+                    .call(d3.axisBottom(xScale))
+                    .append("text")
+                    .attr("x", width + 40)
+                    .attr("y", 15)
+                    .attr("text-anchor", "end")
+                    .text("id bug")
+                    ;
 
-            function drawPolyline(style, path) {
-                svg.select(".graph")
-                    .append("polyline")
-                    .attr("points", path)
-                    .attr("style", style)
-            };
+                group.selectAll(".x_axis")
+                    .selectAll(".tick text")
+                    .attr("text-anchor", "middle")
+                    .attr("transform", "translate(" + (-xScale.bandwidth()) + "," + 20 + ") rotate(-65) ")
+
+                group.append("g")
+                    .attr("class", "y_axis")  //TODO: add marge
+                    .call(d3.axisLeft(yScale).tickFormat(function (d) {
+                        return d;
+                    })
+                        .ticks(10))
+                    .append("text")
+                    .attr("transform", "rotate(-90)")
+                    .attr("y", 6)
+                    .attr("dy", "-5.1em")
+                    .attr("text-anchor", "end")
+                    .text("jours");
+            }
 
             function drawBars(data, group) {
                 data[0].y.bar.forEach((item, index, array) => {
@@ -172,6 +193,13 @@
                 })
             }
 
+            function drawPolyline(style, path) {
+                svg.select(".graph")
+                    .append("polyline")
+                    .attr("points", path)
+                    .attr("style", style)
+            };
+
             function drawGraph(configGraph) {
                 svg.append("text")
                     .attr("class", "title")
@@ -185,45 +213,14 @@
                     .attr("class", "graph")
                     .attr("transform", "translate(" + 100 + "," + 100 + ")");
 
-                g.append("g")
-                    .attr("class", "x_axis")
-                    .attr("transform", "translate(0," + height + ")")
-                    .call(d3.axisBottom(xScale))
-                    .append("text")
-                    .attr("y", height + 200) //TODO: fix labelX
-                    .attr("x", width / 2)
-                    .attr("text-anchor", "end")
-                    .text("bugs")
-                    ;
-
-                g.selectAll(".x_axis")
-                    .selectAll("text")
-                    .attr("text-anchor", "middle")
-                    .attr("transform", "translate(" + (-xScale.bandwidth()) + "," + 20 + ") rotate(-65) ")
-
-                g.append("g")
-                    .attr("class", "y_axis")
-                    .call(d3.axisLeft(yScale).tickFormat(function (d) {
-                        return d;
-                    })
-                        .ticks(10))
-                    .append("text")
-                    .attr("transform", "rotate(-90)")
-                    .attr("y", 6)
-                    .attr("dy", "-5.1em")
-                    .attr("text-anchor", "end")
-                    .text("jours");
-
+                drawAxis(g)
                 drawBars(cfg.data, g)
-
                 drawPolyline("fill:none; stroke:" + configGraph.colors.seuilMax + " ;stroke-width:2; stroke-dasharray:12,8", computePath(cfg.data, item => item.x, item => item.y.lines[0]));
                 drawPolyline("fill:none; stroke:" + configGraph.colors.seuilMin + " ;stroke-width:2; stroke-dasharray:12,8", computePath(cfg.data, item => item.x, item => item.y.lines[1]));
 
                 d3.selectAll("text").attr("fill", "white");
 
-
                 //TODO: infobulle
-
                 //couleur sur selection
                 d3.selectAll(".bar")
                     .on("mouseover", function () {
@@ -234,7 +231,7 @@
                         d3.select(this)
                             .transition()
                             .duration(200)
-                            .attr("fill", d => setColor(d, Math.floor(b / cfg.data.length))) //opti ? 
+                            .attr("fill", d => setColor(d, Math.floor(b / cfg.data.length)))
                     })
             };
 
