@@ -24,36 +24,58 @@
                 };
             };
 
-            var data = [{ bug: "77045", jours: 150, seuilMax: 100, seuilMin: 21 },
-            { bug: "77829", jours: 150, seuilMax: 100, seuilMin: 21 },
-            { bug: "78287", jours: 140, seuilMax: 100, seuilMin: 21 },
-            { bug: "78478", jours: 110, seuilMax: 100, seuilMin: 21 },
-            { bug: "78593", jours: 80, seuilMax: 100, seuilMin: 21 },
-            { bug: "78624", jours: 75, seuilMax: 100, seuilMin: 21 },
-            { bug: "78643", jours: 70, seuilMax: 100, seuilMin: 21 },
-            { bug: "78685", jours: 65, seuilMax: 100, seuilMin: 21 },
-            { bug: "78713", jours: 61, seuilMax: 100, seuilMin: 21 },
-            { bug: "78805", jours: 50, seuilMax: 100, seuilMin: 21 },
-            { bug: "78823", jours: 45, seuilMax: 100, seuilMin: 21 },
-            { bug: "78848", jours: 42, seuilMax: 100, seuilMin: 21 },
-            { bug: "78901", jours: 30, seuilMax: 100, seuilMin: 21 },
-            { bug: "78908", jours: 30, seuilMax: 100, seuilMin: 21 },
-            { bug: "78934", jours: 25, seuilMax: 100, seuilMin: 21 },
-            { bug: "78936", jours: 27, seuilMax: 30, seuilMin: 10 },
-            { bug: "78940", jours: 25, seuilMax: 30, seuilMin: 10 },
-            { bug: "78964", jours: 21, seuilMax: 100, seuilMin: 21 },
-            { bug: "78979", jours: 20, seuilMax: 100, seuilMin: 21 },
-            { bug: "78999", jours: 18, seuilMax: 30, seuilMin: 10 },
-            { bug: "79000", jours: 17, seuilMax: 100, seuilMin: 21 },
-            { bug: "79019", jours: 15, seuilMax: 100, seuilMin: 21 }
+            const rawData = [
+                { bugId: "77045", LTPrisEnCharge: 164, LTCorrection: 0, LTValidation: 0, seuilMax: 100, seuilMin: 21 },
+                { bugId: "77829", LTPrisEnCharge: 206, LTCorrection: 0, LTValidation: 0, seuilMax: 100, seuilMin: 21 },
+                { bugId: "78287", LTPrisEnCharge: 64, LTCorrection: 77, LTValidation: 0, seuilMax: 100, seuilMin: 21 },
+                { bugId: "78478", LTPrisEnCharge: 106, LTCorrection: 0, LTValidation: 0, seuilMax: 100, seuilMin: 21 },
+                { bugId: "78593", LTPrisEnCharge: 81, LTCorrection: 0, LTValidation: 0, seuilMax: 100, seuilMin: 21 },
+                { bugId: "78624", LTPrisEnCharge: 63, LTCorrection: 12, LTValidation: 0, seuilMax: 100, seuilMin: 21 },
+                { bugId: "78643", LTPrisEnCharge: 61, LTCorrection: 11, LTValidation: 15, seuilMax: 100, seuilMin: 21 },
+                { bugId: "78685", LTPrisEnCharge: 11, LTCorrection: 55, LTValidation: 0, seuilMax: 100, seuilMin: 21 },
+                { bugId: "78713", LTPrisEnCharge: 61, LTCorrection: 0, LTValidation: 0, seuilMax: 100, seuilMin: 21 },
+                { bugId: "78805", LTPrisEnCharge: 40, LTCorrection: 10, LTValidation: 30, seuilMax: 100, seuilMin: 21 },
+                { bugId: "78823", LTPrisEnCharge: 27, LTCorrection: 18, LTValidation: 0, seuilMax: 100, seuilMin: 21 },
+                { bugId: "78848", LTPrisEnCharge: 42, LTCorrection: 0, LTValidation: 0, seuilMax: 100, seuilMin: 21 },
+                { bugId: "78901", LTPrisEnCharge: 31, LTCorrection: 0, LTValidation: 0, seuilMax: 100, seuilMin: 21 },
+                { bugId: "78908", LTPrisEnCharge: 21, LTCorrection: 10, LTValidation: 0, seuilMax: 100, seuilMin: 21 },
+                { bugId: "78934", LTPrisEnCharge: 26, LTCorrection: 0, LTValidation: 0, seuilMax: 100, seuilMin: 21 },
+                { bugId: "78936", LTPrisEnCharge: 16, LTCorrection: 11, LTValidation: 0, seuilMax: 30, seuilMin: 7 },
+                { bugId: "78940", LTPrisEnCharge: 15, LTCorrection: 11, LTValidation: 0, seuilMax: 30, seuilMin: 7 },
+                { bugId: "78964", LTPrisEnCharge: 21, LTCorrection: 0, LTValidation: 0, seuilMax: 100, seuilMin: 21 },
+                { bugId: "78979", LTPrisEnCharge: 10, LTCorrection: 10, LTValidation: 0, seuilMax: 100, seuilMin: 21 },
+                { bugId: "78999", LTPrisEnCharge: 7, LTCorrection: 11, LTValidation: 0, seuilMax: 30, seuilMin: 7 },
+                { bugId: "79000", LTPrisEnCharge: 17, LTCorrection: 0, LTValidation: 0, seuilMax: 100, seuilMin: 21 },
+                { bugId: "79019", LTPrisEnCharge: 6, LTCorrection: 10, LTValidation: 0, seuilMax: 100, seuilMin: 21 },
+                { bugId: "79029", LTPrisEnCharge: 13, LTCorrection: 0, LTValidation: 0, seuilMax: 100, seuilMin: 21 },
+                { bugId: "79049", LTPrisEnCharge: 19, LTCorrection: 0, LTValidation: 0, seuilMax: 100, seuilMin: 21 }
             ];
 
+            function formatData(data) {
+                return data.map(item =>
+                    ({
+                        x: item.bugId,
+                        y: {
+                            bar: [
+                                item.LTPrisEnCharge,
+                                item.LTCorrection,
+                                item.LTValidation
+                            ],
+                            lines: [item.seuilMax, item.seuilMin]
+                        }
+                    })
+                );
+            }
+
             var cfg = {
-                data: data,
-                selectedWeek: "15",
+                data: formatData(rawData),// {x, y:{bars:[], lines:[]} }
+                selectedBar: "15", //TODO: select bar pour navigation clavier ect
                 title: "Modaris - Lead Time R&D - Bugs en cours:",
-                colors: { good: "#C5C4C5", bad: "#BE1622" }
+                colors: { prisEnCharge: "#BE1622", validation: "#878787", correction: "#C5C4C5", seuilMin: "rgba(0, 0, 255, 0.6)", seuilMax: "rgba(255, 255, 0, 0.6)" }
             };
+
+            console.log(cfg.data);
+
             const paddingRatio = 0.4;
             var svg = d3.select("svg"),
                 margin = 200,
@@ -63,13 +85,22 @@
                 yScale = d3.scaleLinear().range([height, 0])
                 ;
 
-            xScale.domain(data.map(function (d) { return d.bug; }));
-            yScale.domain([0, d3.max(data, function (d) { return d.jours; })]);
+            function computeMaxJours(d) {
+                const barMax = d.y.bar.reduce((accu, item) => accu + item, 0);
+                const linesMax = Math.max(...(d.y.lines));
+                return Math.max(barMax, linesMax);
+            }
 
+            xScale.domain(cfg.data.map(item => item.x));
+            yScale.domain([0, d3.max(cfg.data, computeMaxJours)]);
 
+            function setColor(d, index) {
+                Object.keys(cfg.colors) //TODO: bar color
+                return cfg.colors[Object.keys(cfg.colors)[index]];
+            }
 
             function removeRedondancy(data, selectParameter) {
-                var accuInit = { points: [], lastSeuilMax: 0, lastSeuilMin: 0, lastPoint: { bug: 0, seuilMax: 0, seuilMin: 0 } };
+                var accuInit = { points: [], lastSeuilMax: 0, lastSeuilMin: 0, lastPoint: { bugId: 0, seuilMax: 0, seuilMin: 0 } };
 
                 var formatedLimit = data.reduce((accu, item, index, array) => {
                     if (selectParameter(item) != accu.lastLimit) {
@@ -88,27 +119,26 @@
 
             function computePath(data, selectX, selectY) {
                 return removeRedondancy(data, selectY).reduce((accu, item, index, array) => {
-                    var point1;
+                    var point1, point2;
                     if (index == 0) {
                         point1 = "0," + yScale(selectY(item.redondancy.last()));
                     }
                     else {
-                        point1 = xScale(selectX(item)) + paddingRatio * xScale.step() / 2 + "," + yScale(selectY(item));
+                        point1 = xScale(selectX(item)) - paddingRatio * xScale.step() / 2 + "," + yScale(selectY(item));
                     }
                     if (item.redondancy.length > 0) {
-                        var point2 = xScale(selectX(item.redondancy.last())) + xScale.bandwidth() + paddingRatio * xScale.step() / 2 + "," + yScale(selectY(item.redondancy.last()))
-                        accu += point1 + " " + point2 + "\n"
+                        point2 = xScale(selectX(item.redondancy.last())) + xScale.bandwidth() + paddingRatio * xScale.step() / 2 + "," + yScale(selectY(item.redondancy.last()))
+                    } else {
+                        point2 = xScale(selectX(item)) + xScale.bandwidth() + paddingRatio * xScale.step() / 2 + "," + yScale(selectY(item));
                     }
-                    else {
-                        accu += point1 + "\n"
-                    }
+                    accu += point1 + " " + point2 + "\n"
                     return accu;
                 }, "");
 
             }
 
-            console.log(removeRedondancy(data, i => i.seuilMin));
-            console.log(computePath(data, item => item.bug, item => item.seuilMax));
+            // console.log(removeRedondancy(cfg.data, i => i.y.lines[1]));
+            // console.log(computePath(cfg.data, item => item.x, item => item.y.lines[0]));
 
             function drawPolyline(style, path) {
                 svg.select(".graph")
@@ -116,6 +146,31 @@
                     .attr("points", path)
                     .attr("style", style)
             };
+
+            function drawBars(data, group) {
+                data[0].y.bar.forEach((item, index, array) => {
+                    group.append("g")
+                        .selectAll(".bar")
+                        .data(data)
+                        .enter()
+                        .append("rect")
+                        .attr("class", "bar")
+                        .attr("x", d => xScale(d.x))
+                        .attr("width", xScale.bandwidth())
+                        .attr("y", d => {
+                            const offset = d.y.bar.reduce((accu, item, currentIndex) => {
+                                return currentIndex < index
+                                    ? accu + item
+                                    : accu
+                            }, 0);
+                            return yScale((d.y.bar[index]) + offset)
+                        })
+                        .attr("height", d => {
+                            return height - yScale(d.y.bar[index])
+                        })
+                        .attr("fill", d => setColor(d, index))
+                })
+            }
 
             function drawGraph(configGraph) {
                 svg.append("text")
@@ -130,21 +185,24 @@
                     .attr("class", "graph")
                     .attr("transform", "translate(" + 100 + "," + 100 + ")");
 
-                drawPolyline("fill:none; stroke:yellow ;stroke-width:2; stroke-dasharray:12,8", computePath(data, item => item.bug, item => item.seuilMax));
-                drawPolyline("fill:none; stroke:blue ;stroke-width:2; stroke-dasharray:12,8", computePath(data, item => item.bug, item => item.seuilMin));
-
                 g.append("g")
-                    .attr("class", "axis")
+                    .attr("class", "x_axis")
                     .attr("transform", "translate(0," + height + ")")
                     .call(d3.axisBottom(xScale))
                     .append("text")
-                    .attr("y", height - 265)
-                    .attr("x", width - 10)
+                    .attr("y", height + 200) //TODO: fix labelX
+                    .attr("x", width / 2)
                     .attr("text-anchor", "end")
-                    .text("bugs");
+                    .text("bugs")
+                    ;
+
+                g.selectAll(".x_axis")
+                    .selectAll("text")
+                    .attr("text-anchor", "middle")
+                    .attr("transform", "translate(" + (-xScale.bandwidth()) + "," + 20 + ") rotate(-65) ")
 
                 g.append("g")
-                    .attr("class", "axis")
+                    .attr("class", "y_axis")
                     .call(d3.axisLeft(yScale).tickFormat(function (d) {
                         return d;
                     })
@@ -156,45 +214,28 @@
                     .attr("text-anchor", "end")
                     .text("jours");
 
-                g.selectAll(".bar")
-                    .data(data)
-                    .enter().append("rect")
-                    .attr("class", "bar")
-                    .attr("x", function (d) { return xScale(d.bug); })
-                    .attr("y", function (d) { return yScale(d.jours); })
-                    .attr("height", function (d) { return height - yScale(d.jours); })
-                    .attr("width", xScale.bandwidth())
-                    .attr("fill", function (d) {
-                        if (d.jours < d.seuilMax) {
-                            return configGraph.colors.good;
-                        }
-                        return configGraph.colors.bad;
-                    });
+                drawBars(cfg.data, g)
+
+                drawPolyline("fill:none; stroke:" + configGraph.colors.seuilMax + " ;stroke-width:2; stroke-dasharray:12,8", computePath(cfg.data, item => item.x, item => item.y.lines[0]));
+                drawPolyline("fill:none; stroke:" + configGraph.colors.seuilMin + " ;stroke-width:2; stroke-dasharray:12,8", computePath(cfg.data, item => item.x, item => item.y.lines[1]));
 
                 d3.selectAll("text").attr("fill", "white");
 
-                //   g.append("text")
-                //                     .attr("class", "title")
-                //                     .attr("transform", "translate(100,0)")
-                //                     .attr("x", 50)
-                //                     .attr("y", 50)
-                //                     .attr("font-size", "24px")
-                //                     .text("toto");
 
+                //TODO: infobulle
+
+                //couleur sur selection
                 d3.selectAll(".bar")
-                    .on("mouseover", function (a, b, c) {
+                    .on("mouseover", function () {
                         d3.select(this)
                             .attr("fill", "black")
                     })
-                    .on("mouseout", function () {
+                    .on("mouseout", function (a, b) {
                         d3.select(this)
-                            .attr("fill", function (d) {
-                                if (d.jours < d.seuilMax) {
-                                    return cfg.colors.good;
-                                }
-                                return cfg.colors.bad;
-                            })
-                    });
+                            .transition()
+                            .duration(200)
+                            .attr("fill", d => setColor(d, Math.floor(b / cfg.data.length))) //opti ? 
+                    })
             };
 
 
