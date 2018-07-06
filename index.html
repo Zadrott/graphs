@@ -11,12 +11,20 @@
         svg {
             display: inline-block;
         }
+
+        polyline {
+            opacity: 0.5;
+        }
+
+        .clickedBar {
+            fill: black;
+        }
     </style>
     <script src="https://d3js.org/d3.v4.min.js"></script>
 
     <body>
         <div id="myGraph"></div>
-        <svg width="800" height="600"></svg>
+        <svg width="800" height="500"></svg>
         <script>
             if (!Array.prototype.last) {
                 Array.prototype.last = function () {
@@ -69,10 +77,11 @@
 
             var cfg = {
                 data: formatData(rawData),  //{ x, y:{ bars:[], lines:[] } }
-                selectedBar: "15", //TODO: select bar pour navigation clavier ect
                 title: "Modaris - Lead Time R&D - Bugs en cours:",
-                colors: { prisEnCharge: "#BE1622", validation: "#878787", correction: "#C5C4C5", seuilMin: "rgba(0, 0, 255, 0.6)", seuilMax: "rgba(255, 255, 0, 0.6)" }
+                colors: { prisEnCharge: "#BE1622", correction: "#C5C4C5", validation: "#878787", seuilMin: "#0000FF", seuilMax: "#FFFF00" }
             };
+
+            //var selectedBar = "15"; 
 
             console.log(cfg.data);
 
@@ -219,9 +228,33 @@
                 drawPolyline("fill:none; stroke:" + configGraph.colors.seuilMin + " ;stroke-width:2; stroke-dasharray:12,8", computePath(cfg.data, item => item.x, item => item.y.lines[1]));
 
                 d3.selectAll("text").attr("fill", "white");
+            };
 
-                //TODO: infobulle
-                //couleur sur selection
+            function addTooltip() {
+                var tooltip = svg.append("g")
+                    .attr("class", "tooltip")
+                    .style("display", "none");
+
+                tooltip.append("rect")
+                    .attr("width", 160)
+                    .attr("height", 60)
+                    .attr("fill", "white")
+                    .style("opacity", 0.6);
+
+                var tooltipText = tooltip.append("text")
+                    .attr("x", 15)
+                    .attr("dy", "1.2em")
+                    .style("text-anchor", "start")
+                    .attr("font-size", "12px")
+                    .attr("font-weight", "bold")
+                tspan1 = tooltipText.append("tspan").attr("x", "1.5em").attr("dy", "1.2em")
+                tspan2 = tooltipText.append("tspan").attr("x", "1.5em").attr("dy", "1.6em")
+                tspan3 = tooltipText.append("tspan").attr("x", "1.5em").attr("dy", "1.8em");
+                return tooltip;
+            }
+
+            function animateChart() {
+                var tooltip = addTooltip()
                 d3.selectAll(".bar")
                     .on("mouseover", function () {
                         d3.select(this)
@@ -233,10 +266,28 @@
                             .duration(200)
                             .attr("fill", d => setColor(d, Math.floor(b / cfg.data.length)))
                     })
-            };
+                    .on("click", function (a, b) {
+                        d3.selectAll(".clickedBar")
+                            .attr("class", "bar")
+                        d3.select(this)
+                            .attr("class", "clickedBar")
+                        var xPosition = d3.mouse(this)[0] + 130;
+                        var yPosition = d3.mouse(this)[1] + 80;
+                        tooltip.style("display", null)
+                        tooltip.attr("transform", "translate(" + xPosition + "," + yPosition + ")");
+                        tspan1.text("Bug: " + a.x)
+                        tspan2.text("Lead Time (selected): " + a.y.bar[Math.floor(b / cfg.data.length)])
+                        tspan3.text("Lead Time (total): " + a.y.bar.reduce((accu, item) => accu += item))
+                    })
+                // d3.selectAll(".clickedBar")
+                //         .on("click", function (a, b) {
+                //         d3.select(this).attr("class", "bar")
+                //     })
+            }
 
 
             drawGraph(cfg);
+            animateChart();
         </script>
     </body>
 
