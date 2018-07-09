@@ -21,70 +21,160 @@
         }
     </style>
     <script src="https://d3js.org/d3.v4.min.js"></script>
+</head>
 
-    <body>
-        <div id="myGraph"></div>
-        <svg width="800" height="500"></svg>
-        <script>
-            if (!Array.prototype.last) {
-                Array.prototype.last = function () {
-                    return this[this.length - 1];
-                };
+
+<body>
+    <div id="myGraph"></div>
+    <svg width="800" height="500"></svg>
+    <script>
+        if (!Array.prototype.last) {
+            Array.prototype.last = function (defaultValue) {
+                if(this.length==0)
+                 return defaultValue;
+                return this[this.length - 1];
             };
+        };
 
-            const rawData = [
-                { bugId: "77045", LTPrisEnCharge: 164, LTCorrection: 0, LTValidation: 0, seuilMax: 100, seuilMin: 21 },
-                { bugId: "77829", LTPrisEnCharge: 206, LTCorrection: 0, LTValidation: 0, seuilMax: 100, seuilMin: 21 },
-                { bugId: "78287", LTPrisEnCharge: 64, LTCorrection: 77, LTValidation: 0, seuilMax: 100, seuilMin: 21 },
-                { bugId: "78478", LTPrisEnCharge: 106, LTCorrection: 0, LTValidation: 0, seuilMax: 100, seuilMin: 21 },
-                { bugId: "78593", LTPrisEnCharge: 81, LTCorrection: 0, LTValidation: 0, seuilMax: 100, seuilMin: 21 },
-                { bugId: "78624", LTPrisEnCharge: 63, LTCorrection: 12, LTValidation: 0, seuilMax: 100, seuilMin: 21 },
-                { bugId: "78643", LTPrisEnCharge: 61, LTCorrection: 11, LTValidation: 15, seuilMax: 100, seuilMin: 21 },
-                { bugId: "78685", LTPrisEnCharge: 11, LTCorrection: 55, LTValidation: 0, seuilMax: 100, seuilMin: 21 },
-                { bugId: "78713", LTPrisEnCharge: 61, LTCorrection: 0, LTValidation: 0, seuilMax: 100, seuilMin: 21 },
-                { bugId: "78805", LTPrisEnCharge: 40, LTCorrection: 10, LTValidation: 30, seuilMax: 100, seuilMin: 21 },
-                { bugId: "78823", LTPrisEnCharge: 27, LTCorrection: 18, LTValidation: 0, seuilMax: 100, seuilMin: 21 },
-                { bugId: "78848", LTPrisEnCharge: 42, LTCorrection: 0, LTValidation: 0, seuilMax: 100, seuilMin: 21 },
-                { bugId: "78901", LTPrisEnCharge: 31, LTCorrection: 0, LTValidation: 0, seuilMax: 100, seuilMin: 21 },
-                { bugId: "78908", LTPrisEnCharge: 21, LTCorrection: 10, LTValidation: 0, seuilMax: 100, seuilMin: 21 },
-                { bugId: "78934", LTPrisEnCharge: 26, LTCorrection: 0, LTValidation: 0, seuilMax: 100, seuilMin: 21 },
-                { bugId: "78936", LTPrisEnCharge: 16, LTCorrection: 11, LTValidation: 0, seuilMax: 30, seuilMin: 7 },
-                { bugId: "78940", LTPrisEnCharge: 15, LTCorrection: 11, LTValidation: 0, seuilMax: 30, seuilMin: 7 },
-                { bugId: "78964", LTPrisEnCharge: 21, LTCorrection: 0, LTValidation: 0, seuilMax: 100, seuilMin: 21 },
-                { bugId: "78979", LTPrisEnCharge: 10, LTCorrection: 10, LTValidation: 0, seuilMax: 100, seuilMin: 21 },
-                { bugId: "78999", LTPrisEnCharge: 7, LTCorrection: 11, LTValidation: 0, seuilMax: 30, seuilMin: 7 },
-                { bugId: "79000", LTPrisEnCharge: 17, LTCorrection: 0, LTValidation: 0, seuilMax: 100, seuilMin: 21 },
-                { bugId: "79019", LTPrisEnCharge: 6, LTCorrection: 10, LTValidation: 0, seuilMax: 100, seuilMin: 21 },
-                { bugId: "79029", LTPrisEnCharge: 13, LTCorrection: 0, LTValidation: 0, seuilMax: 100, seuilMin: 21 },
-                { bugId: "79049", LTPrisEnCharge: 19, LTCorrection: 0, LTValidation: 0, seuilMax: 100, seuilMin: 21 }
-            ];
-
-            function formatData(data) {
-                return data.map(item =>
-                    ({
-                        x: item.bugId,
-                        y: {
-                            bar: [
-                                item.LTPrisEnCharge,
-                                item.LTCorrection,
-                                item.LTValidation
-                            ],
-                            lines: [item.seuilMax, item.seuilMin]
-                        }
-                    })
-                );
-            }
-
+        d3.json("/api/getData", function (rawData) {
             var cfg = {
                 data: formatData(rawData),  //{ x, y:{ bars:[], lines:[] } }
                 title: "Modaris - Lead Time R&D - Bugs en cours:",
                 colors: { prisEnCharge: "#BE1622", correction: "#C5C4C5", validation: "#878787", seuilMin: "#0000FF", seuilMax: "#FFFF00" }
             };
+            console.log(rawData);
+            console.log(cfg);
+            drawGraph(cfg);
+        });
 
-            //var selectedBar = "15"; 
 
-            console.log(cfg.data);
+        var _MS_PER_DAY = 1000 * 60 * 60 * 24;
 
+        // a and b are javascript Date objects
+        function dateDiffInDays(a, b) {
+            // Discard the time and time-zone information.
+            var utc1 = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+            var utc2 = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+
+            return Math.floor((utc2 - utc1) / _MS_PER_DAY);
+        }
+
+        function computeDatePEC(item) {
+            if (item.status == "NEW" || item.status == "REOPENED")
+                return new Date();
+            else {
+                if (item.date_analysed == null) {
+                    if (item.date_assigned == null) {
+                        return item.date_new
+                    }
+                    else {
+                        return item.date_assigned
+                    }
+                }
+                else {
+                    return item.date_analysed
+                }
+            }
+        }
+
+        function computeDateCorrection(item) {
+            if (item.status == "NEW" || item.status == "REOPENED") {
+                return 0;
+            }
+            else {
+                if (item.status == "ASSIGNED/PENDING" || item.status == "RESOLVED") {
+                    return new Date();
+                }
+                else {
+                    if (item.date_resolved == null) {
+                        return item.date_lastfixed;
+                    }
+                    else {
+                        return item.date_resolved;
+                    }
+                }
+            }
+        }
+
+        function computeDateValidation(item) {
+            if (item.status == "NEW" || item.status == "REOPENED") {
+                return 0;
+            }
+            else {
+                if (item.status == "VERIFIED/PRIORITIZED") {
+                    return new Date();
+                }
+                else {
+                    if (item.date_closed == null) {
+                        return 0;
+                    }
+                    else {
+                        return item.date_closed;
+                    }
+                }
+            }
+        }
+
+        function computedLTPEC(item) {
+            return dateDiffInDays(item.date_new, computeDatePEC(item));
+        }
+
+        function computeLTCorrection(item) {
+            if (item.status == "NEW" || item.status == "REOPENED") {
+                return 0;
+            }
+            else {
+                return dateDiffInDays(computeDatePEC(item), computeDateCorrection(item));
+            }
+        }
+
+        function computedLTValidation(item) {
+            if (item.status == "NEW" || computeDateValidation(item) == 0) {
+                return 0;
+            }
+            else {
+                return dateDiffInDays(computeDateCorrection(item), computeDateValidation(item));
+            }
+        }
+
+        function computeSeuils(item) {
+            if (item.severity == "Critical" || item.severity == "High") {
+                return [30, 7];
+            }
+            else {
+                return [100, 21];
+            }
+        }
+
+        function formatData(data) {
+            return data
+                .map(item => ({
+                    ...item,
+                    date_analysed: item.date_analysed ? new Date(item.date_analysed) : null,
+                    date_assigned: item.date_assigned ? new Date(item.date_assigned) : null,
+                    date_closed: item.date_closed ? new Date(item.date_closed) : null,
+                    date_lastfixed: item.date_lastfixed ? new Date(item.date_lastfixed) : null,
+                    date_new: item.date_new ? new Date(item.date_new) : null,
+                    date_reopened: item.date_reopened ? new Date(item.date_reopened) : null,
+                    date_resolved: item.date_resolved ? new Date(item.date_resolved) : null,
+                }))
+                .map(item =>
+                    ({
+                        x: item.bug_id,
+                        y: {
+                            bar: [
+                                computedLTPEC(item),
+                                computeLTCorrection(item),
+                                computedLTValidation(item)
+                            ],
+                            lines: computeSeuils(item)
+                        },
+                        release: item.cf_tgtcomrelease
+                    })
+                );
+        }
+
+        function drawGraph(configGraph) {
             const paddingRatio = 0.4;
             var svg = d3.select("svg"),
                 margin = 200,
@@ -92,7 +182,21 @@
                 height = svg.attr("height") - margin,
                 xScale = d3.scaleBand().range([0, width]).padding(paddingRatio),
                 yScale = d3.scaleLinear().range([height, 0])
-                ;
+
+            xScale.domain(configGraph.data.map(item => item.x));
+            yScale.domain([0, d3.max(configGraph.data, computeMaxJours)]);
+
+            svg.append("text")
+                .attr("class", "title")
+                .attr("transform", "translate(100,0)")
+                .attr("x", 50)
+                .attr("y", 50)
+                .attr("font-size", "24px")
+                .text(configGraph.title);
+
+            var g = svg.append("g")
+                .attr("class", "graph")
+                .attr("transform", "translate(" + 100 + "," + 100 + ")");
 
             function computeMaxJours(d) {
                 const barMax = d.y.bar.reduce((accu, item) => accu + item, 0);
@@ -100,12 +204,9 @@
                 return Math.max(barMax, linesMax);
             }
 
-            xScale.domain(cfg.data.map(item => item.x));
-            yScale.domain([0, d3.max(cfg.data, computeMaxJours)]);
-
-            function setColor(d, index) {
-                Object.keys(cfg.colors)
-                return cfg.colors[Object.keys(cfg.colors)[index]];
+            function setColor(configGraph, d, index) {
+                Object.keys(configGraph.colors)
+                return configGraph.colors[Object.keys(configGraph.colors)[index]];
             }
 
             function removeRedondancy(data, selectParameter) {
@@ -130,20 +231,19 @@
                 return removeRedondancy(data, selectY).reduce((accu, item, index, array) => {
                     var point1, point2;
                     if (index == 0) {
-                        point1 = "0," + yScale(selectY(item.redondancy.last()));
+                        point1 = "0," + yScale(selectY(item.redondancy.last(item)));
                     }
                     else {
                         point1 = xScale(selectX(item)) - paddingRatio * xScale.step() / 2 + "," + yScale(selectY(item));
                     }
                     if (item.redondancy.length > 0) {
-                        point2 = xScale(selectX(item.redondancy.last())) + xScale.bandwidth() + paddingRatio * xScale.step() / 2 + "," + yScale(selectY(item.redondancy.last()))
+                        point2 = xScale(selectX(item.redondancy.last(item))) + xScale.bandwidth() + paddingRatio * xScale.step() / 2 + "," + yScale(selectY(item.redondancy.last(item)))
                     } else {
                         point2 = xScale(selectX(item)) + xScale.bandwidth() + paddingRatio * xScale.step() / 2 + "," + yScale(selectY(item));
                     }
                     accu += point1 + " " + point2 + "\n"
                     return accu;
                 }, "");
-
             }
 
             function drawAxis(group) {
@@ -177,7 +277,7 @@
                     .text("jours");
             }
 
-            function drawBars(data, group) {
+            function drawBars(configGraph, data, group) {
                 data[0].y.bar.forEach((item, index, array) => {
                     group.append("g")
                         .selectAll(".bar")
@@ -198,7 +298,7 @@
                         .attr("height", d => {
                             return height - yScale(d.y.bar[index])
                         })
-                        .attr("fill", d => setColor(d, index))
+                        .attr("fill", d => setColor(configGraph, d, index))
                 })
             }
 
@@ -207,27 +307,6 @@
                     .append("polyline")
                     .attr("points", path)
                     .attr("style", style)
-            };
-
-            function drawGraph(configGraph) {
-                svg.append("text")
-                    .attr("class", "title")
-                    .attr("transform", "translate(100,0)")
-                    .attr("x", 50)
-                    .attr("y", 50)
-                    .attr("font-size", "24px")
-                    .text(configGraph.title);
-
-                var g = svg.append("g")
-                    .attr("class", "graph")
-                    .attr("transform", "translate(" + 100 + "," + 100 + ")");
-
-                drawAxis(g)
-                drawBars(cfg.data, g)
-                drawPolyline("fill:none; stroke:" + configGraph.colors.seuilMax + " ;stroke-width:2; stroke-dasharray:12,8", computePath(cfg.data, item => item.x, item => item.y.lines[0]));
-                drawPolyline("fill:none; stroke:" + configGraph.colors.seuilMin + " ;stroke-width:2; stroke-dasharray:12,8", computePath(cfg.data, item => item.x, item => item.y.lines[1]));
-
-                d3.selectAll("text").attr("fill", "white");
             };
 
             function addTooltip() {
@@ -253,7 +332,7 @@
                 return tooltip;
             }
 
-            function animateChart() {
+            function animateChart(configGraph) {
                 var tooltip = addTooltip()
                 d3.selectAll(".bar")
                     .on("mouseover", function () {
@@ -264,31 +343,38 @@
                         d3.select(this)
                             .transition()
                             .duration(200)
-                            .attr("fill", d => setColor(d, Math.floor(b / cfg.data.length)))
+                            .attr("fill", d => setColor(configGraph, d, Math.floor(b / configGraph.data.length)))
                     })
                     .on("click", function (a, b) {
                         d3.selectAll(".clickedBar")
                             .attr("class", "bar")
                         d3.select(this)
                             .attr("class", "clickedBar")
-                        var xPosition = d3.mouse(this)[0] + 130;
-                        var yPosition = d3.mouse(this)[1] + 80;
+                        var xPosition = d3.mouse(this)[0] + 120;
+                        var yPosition = d3.mouse(this)[1] - 15;
                         tooltip.style("display", null)
                         tooltip.attr("transform", "translate(" + xPosition + "," + yPosition + ")");
-                        tspan1.text("Bug: " + a.x)
-                        tspan2.text("Lead Time (selected): " + a.y.bar[Math.floor(b / cfg.data.length)])
-                        tspan3.text("Lead Time (total): " + a.y.bar.reduce((accu, item) => accu += item))
+                        tspan1.text("Bug: " + a.x + " (" + a.release + ")")
+                        tspan2.text("Selected Lead Time: " + a.y.bar[Math.floor(b / configGraph.data.length)])
+                        tspan3.text("Total Lead Time: " + a.y.bar.reduce((accu, item) => accu += item))
                     })
                 // d3.selectAll(".clickedBar")
                 //         .on("click", function (a, b) {
                 //         d3.select(this).attr("class", "bar")
+                //         console.log(a, b)
+                //         console.log(this)
                 //     })
             }
 
 
-            drawGraph(cfg);
-            animateChart();
-        </script>
-    </body>
+            drawAxis(g)
+            drawBars(configGraph, configGraph.data, g)
+            drawPolyline("fill:none; stroke:" + configGraph.colors.seuilMax + " ;stroke-width:2; stroke-dasharray:12,8", computePath(configGraph.data, item => item.x, item => item.y.lines[0]));
+            drawPolyline("fill:none; stroke:" + configGraph.colors.seuilMin + " ;stroke-width:2; stroke-dasharray:12,8", computePath(configGraph.data, item => item.x, item => item.y.lines[1]));
+            d3.selectAll("text").attr("fill", "white");
+            animateChart(configGraph);
+        };
+    </script>
+</body>
 
 </html>
