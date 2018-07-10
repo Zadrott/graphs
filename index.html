@@ -169,7 +169,8 @@
                             ],
                             lines: computeSeuils(item)
                         },
-                        release: item.cf_tgtcomrelease
+                        release: item.cf_tgtcomrelease,
+                        severity: item.severity
                     })
                 );
         }
@@ -316,7 +317,7 @@
 
                 tooltip.append("rect")
                     .attr("width", 160)
-                    .attr("height", 60)
+                    .attr("height", 70)
                     .attr("fill", "white")
                     .style("opacity", 0.6);
 
@@ -326,9 +327,10 @@
                     .style("text-anchor", "start")
                     .attr("font-size", "12px")
                     .attr("font-weight", "bold")
-                tspan1 = tooltipText.append("tspan").attr("x", "1.5em").attr("dy", "1.2em")
-                tspan2 = tooltipText.append("tspan").attr("x", "1.5em").attr("dy", "1.6em")
-                tspan3 = tooltipText.append("tspan").attr("x", "1.5em").attr("dy", "1.8em");
+                tspan1 = tooltipText.append("tspan").attr("x", "1.5em").attr("dy", "1.3em")
+                tspan2 = tooltipText.append("tspan").attr("x", "1.5em").attr("dy", "1.3em")
+                tspan3 = tooltipText.append("tspan").attr("x", "1.5em").attr("dy", "1.3em")
+                tspan4 = tooltipText.append("tspan").attr("x", "1.5em").attr("dy", "1.3em");
                 return tooltip;
             }
 
@@ -355,8 +357,9 @@
                         tooltip.style("display", null)
                         tooltip.attr("transform", "translate(" + xPosition + "," + yPosition + ")");
                         tspan1.text("Bug: " + a.x + " (" + a.release + ")")
-                        tspan2.text("Selected Lead Time: " + a.y.bar[Math.floor(b / configGraph.data.length)])
-                        tspan3.text("Total Lead Time: " + a.y.bar.reduce((accu, item) => accu += item))
+                        tspan2.text("Severity: " + a.severity)
+                        tspan3.text("Selected Lead Time: " + a.y.bar[Math.floor(b / configGraph.data.length)])
+                        tspan4.text("Total Lead Time: " + a.y.bar.reduce((accu, item) => accu += item))
                     })
                 // d3.selectAll(".clickedBar")
                 //         .on("click", function (a, b) {
