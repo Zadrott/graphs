@@ -1,12 +1,11 @@
 var express = require("express")
 var mysql = require("mysql");
 var jsonfile = require('jsonfile');
-var credential = require("credential.json");
-
+var credential = require("./credential.json");
 
 var app = express();
 
-var con = mysql.createConnection();
+var con = mysql.createConnection(credential);
 
 const request = `SELECT
 b.bug_id,
@@ -56,8 +55,6 @@ app.get("/api/getData", function(req, res) {
         con.query(""+request, function (err, result, fields) {
           if (err) throw err;
           res.json(result);   
-        //   writeJSON(result);
-        //   console.log(result);
         });
    
 });
