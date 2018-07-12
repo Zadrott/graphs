@@ -5,11 +5,16 @@
     <style>
         body {
             background-color: #6F6F6E;
-            font: arial;
+            /* font-family: gotham, Arial; */
         }
+
+        /* TODO: responsive svg */
 
         svg {
             display: inline-block;
+            /* max-width: 1000px; */
+            width: 100%;
+            min-height: 600px;
         }
 
         polyline {
@@ -17,15 +22,20 @@
         }
 
         .clickedBar {
-            fill: black;
+            fill: #800080;
         }
 
         .bugDetail {
-            background: white;
+            background: #ffffff;
             text-align: center;
-            margin: auto;
-            max-width: 20em;
-            padding: 1.5em;
+            font-size: 0.85em;
+            line-height: 0.85em;
+            /* margin: auto; */
+            max-width: 13em;
+            padding-bottom: 1em;
+            padding-top: 0.1em;
+            margin-left: 7em;
+            /* margin-top: -2em; */
         }
 
         .hide {
@@ -38,13 +48,14 @@
 
 <body>
     <div id="myGraph"></div>
-    <svg width="800" height="500"></svg>
+    <svg id="mysvg"></svg>
 
     <div class="bugDetail hide">
         <h3></h3>
         <p id=p1></p>
         <p id=p2></p>
-        <p id=p3></p>
+        <!-- <p id=p3></p> -->
+        <p id=p4></p>
         <a target="_blank">See in Bugzilla
             <a/>
 
@@ -73,130 +84,129 @@
             var cfg = {
                 data: formatData(rawData),  //{ x, y:{ bars:[], lines:[] } }
                 title: "Modaris - Lead Time R&D - Bugs en cours:",
-                colors: { prisEnCharge: "#BE1622", correction: "#C5C4C5", validation: "#878787", seuilMin: "#0000FF", seuilMax: "#FFFF00" },
+                colors: { prisEnCharge: "#BE1622", correction: "#C5C4C5", validation: "black", seuilMin: "#0000FF", seuilMax: "#FFFF00" },
                 selectedItemChange: (item, index) => {
                     var bugDetail = d3.selectAll(".bugDetail")
                     bugDetail.classed("hide", item == null)
-                    bugDetail.selectAll("h3").text("Bug: " + item.x + " (" + item.release + ")")
-                    bugDetail.selectAll("#p1").text("Severity: " + item.severity);
-                    bugDetail.selectAll("#p2").text("Selected Lead Time: " + item.y.bar[Math.floor(index / cfg.data.length)])
-                    bugDetail.selectAll("#p3").text("Total Lead Time: " + item.y.bar.reduce((accu, item) => accu += item))
+                    bugDetail.selectAll("h3").text("Bug: " + item.x)
+                    bugDetail.selectAll("#p1").text("TCR: " + item.release)
+                    bugDetail.selectAll("#p2").text("Severity: " + item.severity);
+                    //bugDetail.selectAll("#p3").text("Selected Lead Time: " + item.y.bar[Math.floor(index / cfg.data.length)])
+                    bugDetail.selectAll("#p4").text("Total Lead Time: " + item.y.bar.reduce((accu, item) => accu += item))
                     bugDetail.selectAll("a").attr("href", "http://bugzilla.lectra.com/show_activity.cgi?id=" + item.x)
                 }
             };
             console.log(rawData);
             console.log(cfg);
             drawGraph(cfg);
+            //window.onresize = drawGraph(cfg);
         });
 
-        function dateDiffInDays(startDate, endDate) { //compute business days between two dates
-            var count = 0;
-            var curDate = startDate;
-            while (curDate < endDate && count < 1000) {
-                var dayOfWeek = curDate.getDay();
-                if (!((dayOfWeek == DAYS.saturday) || (dayOfWeek == DAYS.sunday)))
-                    count++;
-                curDate.setDate(curDate.getDate() + 1);
-            }
-            if (count == 1000) {
-                throw "fuck u"
-            }
-            return count;
-        }
 
-        function computeBusinessDays(firstDay, lastDay) {
-            var diff = (lastDay - firstDay) / MS_PER_DAY;
-            return Math.ceil(diff - 2 * diff / 7);
-        }
-
-        function computeDatePEC(item) {
-            if (item.status == "NEW" || item.status == "REOPENED")
-                return new Date();
-            else {
-                if (item.date_analysed == null) {
-                    if (item.date_assigned == null) {
-                        return item.date_new
-                    }
-                    else {
-                        return item.date_assigned
-                    }
-                }
-                else {
-                    return item.date_analysed
-                }
-            }
-        }
-
-        function computeDateCorrection(item) {
-            if (item.status == "NEW" || item.status == "REOPENED") {
-                return 0;
-            }
-            else {
-                if (item.status == "ASSIGNED/PENDING" || item.status == "RESOLVED") {
-                    return new Date();
-                }
-                else {
-                    if (item.date_resolved == null) {
-                        return item.date_lastfixed;
-                    }
-                    else {
-                        return item.date_resolved;
-                    }
-                }
-            }
-        }
-
-        function computeDateValidation(item) {
-            if (item.status == "NEW" || item.status == "REOPENED") {
-                return 0;
-            }
-            else {
-                if (item.status == "VERIFIED/PRIORITIZED") {
-                    return new Date();
-                }
-                else {
-                    if (item.date_closed == null) {
-                        return 0;
-                    }
-                    else {
-                        return item.date_closed;
-                    }
-                }
-            }
-        }
-
-        function computedLTPEC(item) {
-            return dateDiffInDays(item.date_new, computeDatePEC(item));
-        }
-
-        function computeLTCorrection(item) {
-            if (item.status == "NEW" || item.status == "REOPENED") {
-                return 0;
-            }
-            else {
-                return dateDiffInDays(computeDatePEC(item), computeDateCorrection(item));
-            }
-        }
-
-        function computedLTValidation(item) {
-            if (item.status == "NEW" || computeDateValidation(item) == 0) {
-                return 0;
-            }
-            else {
-                return dateDiffInDays(computeDateCorrection(item), computeDateValidation(item));
-            }
-        }
-
-        function computeSeuils(item) {
-            if (item.severity == "Critical" || item.severity == "High") {
-                return [30, 7];
-            }
-            else {
-                return [100, 21];
-            }
-        }
 
         function formatData(data) {
+            function dateDiffInDays(startDate, endDate) { //compute business days between two dates TODO: jours feries
+                var count = 0;
+                var curDate = startDate;
+                while (curDate < endDate && count < 1000) {
+                    var dayOfWeek = curDate.getDay();
+                    if (!((dayOfWeek == DAYS.saturday) || (dayOfWeek == DAYS.sunday)))
+                        count++;
+                    curDate.setDate(curDate.getDate() + 1);
+                }
+                if (count == 1000) {
+                    throw "fuck u"
+                }
+                return count;
+            }
+
+            function computeDatePEC(item) {
+                if (item.status == "NEW" || item.status == "REOPENED")
+                    return new Date();
+                else {
+                    if (item.date_analysed == null) {
+                        if (item.date_assigned == null) {
+                            return item.date_new
+                        }
+                        else {
+                            return item.date_assigned
+                        }
+                    }
+                    else {
+                        return item.date_analysed
+                    }
+                }
+            }
+
+            function computeDateCorrection(item) {
+                if (item.status == "NEW" || item.status == "REOPENED") {
+                    return 0;
+                }
+                else {
+                    if (item.status == "ASSIGNED/PENDING" || item.status == "RESOLVED") {
+                        return new Date();
+                    }
+                    else {
+                        if (item.date_resolved == null) {
+                            return item.date_lastfixed;
+                        }
+                        else {
+                            return item.date_resolved;
+                        }
+                    }
+                }
+            }
+
+            function computeDateValidation(item) {
+                if (item.status == "NEW" || item.status == "REOPENED") {
+                    return 0;
+                }
+                else {
+                    if (item.status == "VERIFIED/PRIORITIZED") {
+                        return new Date();
+                    }
+                    else {
+                        if (item.date_closed == null) {
+                            return 0;
+                        }
+                        else {
+                            return item.date_closed;
+                        }
+                    }
+                }
+            }
+
+            function computedLTPEC(item) {
+                return dateDiffInDays(item.date_new, computeDatePEC(item));
+            }
+
+            function computeLTCorrection(item) {
+                if (item.status == "NEW" || item.status == "REOPENED") {
+                    return 0;
+                }
+                else {
+                    return dateDiffInDays(computeDatePEC(item), computeDateCorrection(item));
+                }
+            }
+
+            function computedLTValidation(item) {
+                if (item.status == "NEW" || computeDateValidation(item) == 0) {
+                    return 0;
+                }
+                else {
+                    return dateDiffInDays(computeDateCorrection(item), computeDateValidation(item));
+                }
+            }
+
+            function computeSeuils(item) {
+                if (item.severity == "Critical" || item.severity == "High") {
+                    return [30, 7];
+                }
+                else {
+                    return [100, 21];
+                }
+            }
+
             return data
                 .map(item => ({
                     ...item,
@@ -226,11 +236,12 @@
         }
 
         function drawGraph(configGraph) {
-            const paddingRatio = 0.4;
-            var svg = d3.select("svg"),
-                margin = 200,
-                width = svg.attr("width") - margin,
-                height = svg.attr("height") - margin,
+            var svg = d3.select("svg");
+
+            const paddingRatio = 0.2;
+            var margin = 200,
+                width = svg.node().clientWidth - margin,
+                height = svg.node().clientHeight - margin,
                 xScale = d3.scaleBand().range([0, width]).padding(paddingRatio),
                 yScale = d3.scaleLinear().range([height, 0])
 
@@ -245,6 +256,7 @@
                 .attr("font-size", "24px")
                 .text(configGraph.title);
 
+            //todo rename 
             var g = svg.append("g")
                 .attr("class", "graph")
                 .attr("transform", "translate(" + 100 + "," + 100 + ")");
@@ -298,7 +310,9 @@
             }
 
             function drawAxis(group) {
-                group.append("g")
+                var axisGroup = group.append("g")
+                    .attr("class", "axis")
+                axisGroup.append("g")
                     .attr("class", "x_axis")
                     .attr("transform", "translate(0," + height + ")")
                     .call(d3.axisBottom(xScale))
@@ -306,16 +320,15 @@
                     .attr("x", width + 40)
                     .attr("y", 15)
                     .attr("text-anchor", "end")
-                    .text("id bug")
-                    ;
+                    .text("id bug");
 
-                group.selectAll(".x_axis")
+                axisGroup.selectAll(".x_axis")
                     .selectAll(".tick text")
-                    .attr("text-anchor", "middle")
-                    .attr("transform", "translate(" + (-xScale.bandwidth()) + "," + 20 + ") rotate(-65) ")
+                    .attr("text-anchor", "end")
+                    .attr("transform", "translate( -10,5 )  rotate(-65)");
 
-                group.append("g")
-                    .attr("class", "y_axis")  //TODO: add marge
+                axisGroup.append("g")
+                    .attr("class", "y_axis")  //TODO: limitte 250
                     .call(d3.axisLeft(yScale).tickFormat(function (d) {
                         return d;
                     })
@@ -329,13 +342,17 @@
             }
 
             function drawBars(configGraph, data, group) {
+                // fixme group tag by column
+                var barsGroup = group.append("g")
+                    .attr("class", "bars")
                 data[0].y.bar.forEach((item, index, array) => {
-                    group.append("g")
+                    barsGroup.append("g")
+                        .attr("class", "bar")
                         .selectAll(".bar")
                         .data(data)
                         .enter()
                         .append("rect")
-                        .attr("class", "bar")
+                        .attr("class", "rect")
                         .attr("x", d => xScale(d.x))
                         .attr("width", xScale.bandwidth())
                         .attr("y", d => {
@@ -351,20 +368,72 @@
                         })
                         .attr("fill", d => setColor(configGraph, d, index))
                 })
+                //TODO: LT on bars
+                group.append("g").selectAll(".bar-text")
+                    .data(data)
+                    .enter()
+                    .append("text")
+                    .attr("x", d => xScale(d.x))
+                    .attr("y", d => {
+                        const offset = d.y.bar.reduce((accu, item, currentIndex) => {
+                            return currentIndex < 0
+                                ? accu + item
+                                : accu
+                        }, 0);
+                        return yScale((d.y.bar[0]) / 2 + offset)
+                    })
+                    .text(d => "" + d.y.bar[0])
+                group.append("g").selectAll(".bar-text")
+                    .data(data)
+                    .enter()
+                    .append("text")
+                    .attr("x", d => xScale(d.x))
+                    .attr("y", d => {
+                        const offset = d.y.bar.reduce((accu, item, currentIndex) => {
+                            return currentIndex < 1
+                                ? accu + item
+                                : accu
+                        }, 0);
+                        return yScale((d.y.bar[1]) / 2 + offset)
+                    })
+                    .text(d => "" + d.y.bar[1])
+                // group.append("g").selectAll(".bar-text")
+                //     .data(data)
+                //     .enter()
+                //     .append("text")
+                //     .attr("x", d => xScale(d.x))
+                //     .attr("y", d => {
+                //         const offset = d.y.bar.reduce((accu, item, currentIndex) => {
+                //             return currentIndex < 2
+                //                 ? accu + item
+                //                 : accu
+                //         }, 0);
+                //         return yScale((d.y.bar[2]) / 2 + offset)
+                //     })
+
+
+
             }
 
-            function drawPolyline(style, path) {
-                svg.select(".graph")
+            function drawPolyline(style, path, linesGroup) {
+                linesGroup
                     .append("polyline")
                     .attr("points", path)
                     .attr("style", style)
             };
 
+            // function drawLegend() {
+            //     var g = svg.append("g")
+            //         .attr("class", "legend")
+
+            // }
+
+
             function animateChart(configGraph) {
                 d3.selectAll(".bar")
                     .on("mouseover", function () {
                         d3.select(this)
-                            .attr("fill", "black")
+                            .attr("fill", "#800080")
                     })
                     .on("mouseout", function (a, b) {
                         d3.select(this)
@@ -392,9 +461,15 @@
 
             drawAxis(g);
             drawBars(configGraph, configGraph.data, g);
-            drawPolyline("fill:none; stroke:" + configGraph.colors.seuilMax + " ;stroke-width:2; stroke-dasharray:12,8", computePath(configGraph.data, item => item.x, item => item.y.lines[0]));
-            drawPolyline("fill:none; stroke:" + configGraph.colors.seuilMin + " ;stroke-width:2; stroke-dasharray:12,8", computePath(configGraph.data, item => item.x, item => item.y.lines[1]));
-            d3.selectAll("text").attr("fill", "white");
+            var linesGroup = g.append("g")
+                .attr("class", "lines")
+            drawPolyline(
+                "fill:none; stroke:" + configGraph.colors.seuilMax + " ;stroke-width:2; stroke-dasharray:12,8",
+                computePath(configGraph.data, item => item.x, item => item.y.lines[0]),
+                linesGroup
+            );
+            drawPolyline("fill:none; stroke:" + configGraph.colors.seuilMin + " ;stroke-width:2; stroke-dasharray:12,8", computePath(configGraph.data, item => item.x, item => item.y.lines[1]), linesGroup);
+            d3.selectAll("text").attr("fill", "#ffffff");
             animateChart(configGraph);
         };
     </script>
