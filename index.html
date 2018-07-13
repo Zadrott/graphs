@@ -56,8 +56,7 @@
         <p id=p2></p>
         <!-- <p id=p3></p> -->
         <p id=p4></p>
-        <a target="_blank">See in Bugzilla
-            <a/>
+        <a target="_blank">See in Bugzilla</a>
 
     </div>
     <script>
@@ -256,8 +255,7 @@
                 .attr("font-size", "24px")
                 .text(configGraph.title);
 
-            //todo rename 
-            var g = svg.append("g")
+            var graph = svg.append("g")
                 .attr("class", "graph")
                 .attr("transform", "translate(" + 100 + "," + 100 + ")");
 
@@ -347,12 +345,12 @@
                     .attr("class", "bars")
                 data[0].y.bar.forEach((item, index, array) => {
                     barsGroup.append("g")
-                        .attr("class", "bar")
-                        .selectAll(".bar")
+                        .attr("class", "step")
+                        .selectAll(".step")
                         .data(data)
                         .enter()
                         .append("rect")
-                        .attr("class", "rect")
+                        .attr("class", "bar")
                         .attr("x", d => xScale(d.x))
                         .attr("width", xScale.bandwidth())
                         .attr("y", d => {
@@ -368,51 +366,31 @@
                         })
                         .attr("fill", d => setColor(configGraph, d, index))
                 })
-                //TODO: LT on bars
-                group.append("g").selectAll(".bar-text")
-                    .data(data)
-                    .enter()
-                    .append("text")
-                    .attr("x", d => xScale(d.x))
-                    .attr("y", d => {
-                        const offset = d.y.bar.reduce((accu, item, currentIndex) => {
-                            return currentIndex < 0
-                                ? accu + item
-                                : accu
-                        }, 0);
-                        return yScale((d.y.bar[0]) / 2 + offset)
-                    })
-                    .text(d => "" + d.y.bar[0])
-                group.append("g").selectAll(".bar-text")
-                    .data(data)
-                    .enter()
-                    .append("text")
-                    .attr("x", d => xScale(d.x))
-                    .attr("y", d => {
-                        const offset = d.y.bar.reduce((accu, item, currentIndex) => {
-                            return currentIndex < 1
-                                ? accu + item
-                                : accu
-                        }, 0);
-                        return yScale((d.y.bar[1]) / 2 + offset)
-                    })
-                    .text(d => "" + d.y.bar[1])
-                // group.append("g").selectAll(".bar-text")
-                //     .data(data)
-                //     .enter()
-                //     .append("text")
-                //     .attr("x", d => xScale(d.x))
-                //     .attr("y", d => {
-                //         const offset = d.y.bar.reduce((accu, item, currentIndex) => {
-                //             return currentIndex < 2
-                //                 ? accu + item
-                //                 : accu
-                //         }, 0);
-                //         return yScale((d.y.bar[2]) / 2 + offset)
-                //     })
 
+                //LT on bars
+                for (var i = 0; i < 3; i++) {
+                    group.append("g").selectAll(".bar-text")
+                        .data(data)
+                        .enter()
+                        .append("text")
+                        .attr("x", d => xScale(d.x) + xScale.bandwidth() / 2)
+                        .attr("y", d => {
+                            const offset = d.y.bar.reduce((accu, item, currentIndex) => {
+                                return currentIndex < i
+                                    ? accu + item
+                                    : accu
+                            }, 0);
+                            return yScale((d.y.bar[i]) / 2 + offset)
+                        })
+                        .attr("text-anchor", "middle")
+                        .text(d => {
+                            return d.y.bar[i] > 0
+                                ? "" + d.y.bar[i]
+                                : ""
+                        })
 
-
+                        .style("font-size", "0.7em")
+                }
             }
 
             function drawPolyline(style, path, linesGroup) {
@@ -422,12 +400,12 @@
                     .attr("style", style)
             };
 
+            // TODO: legende
             // function drawLegend() {
             //     var g = svg.append("g")
             //         .attr("class", "legend")
 
             // }
-
 
             function animateChart(configGraph) {
                 d3.selectAll(".bar")
@@ -446,6 +424,7 @@
                             .attr("class", "bar")
                         d3.select(this)
                             .attr("class", "clickedBar")
+                        console.log(item)
                         configGraph.selectedItemChange(item, index)
                     })
 
@@ -459,9 +438,9 @@
             }
 
 
-            drawAxis(g);
-            drawBars(configGraph, configGraph.data, g);
-            var linesGroup = g.append("g")
+            drawAxis(graph);
+            drawBars(configGraph, configGraph.data, graph);
+            var linesGroup = graph.append("g")
                 .attr("class", "lines")
             drawPolyline(
                 "fill:none; stroke:" + configGraph.colors.seuilMax + " ;stroke-width:2; stroke-dasharray:12,8",
