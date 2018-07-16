@@ -18,6 +18,10 @@
         polyline {
             opacity: 0.5;
         }
+        
+        .clickedBar {
+            fill: #800080;
+        }
 
         .bugDetail {
             background: #ffffff;
@@ -421,13 +425,12 @@
                         d3.select(this)
                             .transition()
                             .duration(200)
-                            .attr("fill", (d, i) => setColor(configGraph, d, b % 3))
+                            .attr("fill", (d, i) => setColor(configGraph, d, b % computeNumberOfStep(configGraph.data)))
                     })
 
                     .on("click", function (item, index) {
                         d3.selectAll(".clickedBar")
                             .attr("class", "bar")
-                            .attr("fill", COLORS.purple)
                         d3.select(this)
                             .attr("class", "clickedBar")
                         configGraph.selectedItemChange(item, index)
