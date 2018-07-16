@@ -19,10 +19,6 @@
             opacity: 0.5;
         }
 
-        .clickedBar {
-            fill: #800080;
-        }
-
         .bugDetail {
             background: #ffffff;
             text-align: center;
@@ -73,13 +69,22 @@
             sunday: 0
         }
 
+        const COLORS = {
+            lectra_red: "#BE1622",
+            lectra_lightGrey: "#C5C4C5",
+            black: "#000000",
+            yellow: "#FFFF00",
+            blue: "#0000FF",
+            purple: "#800080"
+        }
+
         const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
         d3.json("/api/getData", function (rawData) {
             var cfg = {
                 data: formatData(rawData),  //{ x, y:{ bars:[], lines:[] } }
                 title: "Modaris - Lead Time R&D - Bugs en cours:",
-                colors: { prisEnCharge: "#BE1622", correction: "#C5C4C5", validation: "#000000", seuilMin: "#0000FF", seuilMax: "#FFFF00" },
+                colors: { prisEnCharge: COLORS.lectra_red, correction: COLORS.lectra_lightGrey, validation: COLORS.black, seuilMin: COLORS.blue, seuilMax: COLORS.yellow },
                 selectedItemChange: (item, index) => {
                     var bugDetail = d3.selectAll(".bugDetail")
                     bugDetail.classed("hide", item == null)
@@ -93,14 +98,24 @@
             console.log(rawData);
             console.log(cfg);
             drawGraph(cfg);
-            //TODO: resize
-            //window.onresize = drawGraph(cfg);
         });
+        
+        const cache = new Map();
 
-
+        function computeNumberOfStep(data){
+            var result = cache.get(data);
+            if (result==null) {
+                result =  data.reduce((accu,item)=>{
+                    const value = item.y.bar.length;
+                    return value > accu ? value: accu;
+                },0) 
+                 cache.set(data, result)
+            }
+            return result
+        }
 
         function formatData(data) {
-            function dateDiffInDays(startDate, endDate) { //compute business days between two dates TODO: jours feries
+            function dateDiffInDays(startDate, endDate) { //compute business days between two dates
                 var count = 0;
                 var curDate = startDate;
                 while (curDate < endDate && count < 1000) {
@@ -322,7 +337,7 @@
                     .attr("transform", "translate( -10,5 )  rotate(-65)");
 
                 axisGroup.append("g")
-                    .attr("class", "y_axis")  //TODO: limitte 250
+                    .attr("class", "y_axis")
                     .call(d3.axisLeft(yScale).tickFormat(function (d) {
                         return d;
                     })
@@ -343,7 +358,7 @@
                     .enter()
                     .append("g")
                     .attr("class", "column")
-                    
+
                 data[0].y.bar.forEach((item, index, array) => {
                     group.selectAll(".column")
                         .append("g")
@@ -351,42 +366,42 @@
                 })
 
                 group.selectAll(".serie")
-                        .append("rect")
-                        .attr("class", "bar")
-                        .attr("x", (d) => xScale(d.x))
-                        .attr("width", xScale.bandwidth())
-                        .attr("y", (d,i) =>{
-                            const offset = d.y.bar.reduce((accu, item, currentIndex) => {
-                                return currentIndex < i%3
-                                    ? accu + item
-                                    : accu
-                            }, 0);
-                            return yScale((d.y.bar[i%3]) + offset)
-                        })
-                        .attr("height", (d,i) => {
-                            return height - yScale(d.y.bar[i%3])
-                        })
-                        .attr("fill", (d,i) => setColor(configGraph, d, i%3))
+                    .append("rect")
+                    .attr("class", "bar")
+                    .attr("x", d => xScale(d.x))
+                    .attr("width", xScale.bandwidth())
+                    .attr("y", (d, i) => {
+                        const offset = d.y.bar.reduce((accu, item, currentIndex) => {
+                            return currentIndex < i % computeNumberOfStep(data)
+                                ? accu + item
+                                : accu
+                        }, 0);
+                        return yScale((d.y.bar[i % computeNumberOfStep(data)]) + offset)
+                    })
+                    .attr("height", (d, i) => {
+                        return height - yScale(d.y.bar[i % computeNumberOfStep(data)])
+                    })
+                    .attr("fill", (d, i) => setColor(configGraph, d, i % computeNumberOfStep(data)))
 
                 //LT on bars
                 group.selectAll(".serie")
-                        .append("text")
-                        .attr("x", d => xScale(d.x) + xScale.bandwidth() / 2)
-                        .attr("y", (d,i) => {
-                            const offset = d.y.bar.reduce((accu, item, currentIndex) => {
-                                return currentIndex < i%3
-                                    ? accu + item
-                                    : accu
-                            }, 0);
-                            return yScale((d.y.bar[i%3]) / 2 + offset)
-                        })
-                        .attr("text-anchor", "middle")
-                        .text((d,i) => {
-                            return d.y.bar[i%3] > 0
-                                ? "" + d.y.bar[i%3]
-                                : ""
-                        })
-                        .style("font-size", "0.7em")
+                    .append("text")
+                    .attr("x", d => xScale(d.x) + xScale.bandwidth() / 2)
+                    .attr("y", (d, i) => {
+                        const offset = d.y.bar.reduce((accu, item, currentIndex) => {
+                            return currentIndex < i % computeNumberOfStep(data)
+                                ? accu + item
+                                : accu
+                        }, 0);
+                        return yScale((d.y.bar[i % computeNumberOfStep(data)]) / 2 + offset)
+                    })
+                    .attr("text-anchor", "middle")
+                    .text((d, i) => {
+                        return d.y.bar[i % computeNumberOfStep(data)] > 0
+                            ? "" + d.y.bar[i % computeNumberOfStep(data)]
+                            : ""
+                    })
+                    .style("font-size", "0.7em")
             }
 
             function drawPolyline(style, path, linesGroup) {
@@ -396,41 +411,27 @@
                     .attr("style", style)
             };
 
-            // TODO: legende
-            // function drawLegend() {
-            //     var g = svg.append("g")
-            //         .attr("class", "legend")
-
-            // }
-
             function animateChart(configGraph) {
                 d3.selectAll(".bar")
                     .on("mouseover", function () {
                         d3.select(this)
-                            .attr("fill", "#800080")
+                            .attr("fill", COLORS.purple)
                     })
                     .on("mouseout", function (a, b) {
                         d3.select(this)
                             .transition()
                             .duration(200)
-                            .attr("fill", (d,i) => setColor(configGraph, d, b%3))
-                        })
-                    
+                            .attr("fill", (d, i) => setColor(configGraph, d, b % 3))
+                    })
+
                     .on("click", function (item, index) {
                         d3.selectAll(".clickedBar")
                             .attr("class", "bar")
+                            .attr("fill", COLORS.purple)
                         d3.select(this)
                             .attr("class", "clickedBar")
                         configGraph.selectedItemChange(item, index)
                     })
-
-                //TODO: selection multiple
-                // d3.selectAll(".clickedBar")
-                //         .on("click", function (a, b) {
-                //         d3.select(this).attr("class", "bar")
-                //         console.log(a, b)
-                //         console.log(this)
-                //     })
             }
 
 
