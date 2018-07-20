@@ -38,12 +38,6 @@ AND (b.cf_tgtcomrelease <> '')
 GROUP BY b.bug_id
 ORDER BY b.bug_id`;
 
-function writeJSON(data){
-    jsonfile.writeFile('data.json', data, function (err) {
-        console.error(err);
-      })
-}
-
 con.connect(function(err) {
     if (err) throw err;
 

@@ -10,7 +10,7 @@
 
         svg {
             display: inline-block;
-            /* max-width: 1000px; */
+            max-width: 1200px;
             width: 100%;
             min-height: 600px;
         }
@@ -18,7 +18,7 @@
         polyline {
             opacity: 0.5;
         }
-        
+
         .clickedBar {
             fill: #800080;
         }
@@ -103,17 +103,17 @@
             console.log(cfg);
             drawGraph(cfg);
         });
-        
+
         const cache = new Map();
 
-        function computeNumberOfStep(data){
+        function computeNumberOfStep(data) {
             var result = cache.get(data);
-            if (result==null) {
-                result =  data.reduce((accu,item)=>{
+            if (result == null) {
+                result = data.reduce((accu, item) => {
                     const value = item.y.bar.length;
-                    return value > accu ? value: accu;
-                },0) 
-                 cache.set(data, result)
+                    return value > accu ? value : accu;
+                }, 0)
+                cache.set(data, result)
             }
             return result
         }
@@ -122,14 +122,11 @@
             function dateDiffInDays(startDate, endDate) { //compute business days between two dates
                 var count = 0;
                 var curDate = startDate;
-                while (curDate < endDate && count < 1000) {
+                while (curDate < endDate) {
                     var dayOfWeek = curDate.getDay();
                     if (!((dayOfWeek == DAYS.saturday) || (dayOfWeek == DAYS.sunday)))
                         count++;
                     curDate.setDate(curDate.getDate() + 1);
-                }
-                if (count == 1000) {
-                    throw "fuck u"
                 }
                 return count;
             }
@@ -260,7 +257,10 @@
                 yScale = d3.scaleLinear().range([height, 0])
 
             xScale.domain(configGraph.data.map(item => item.x));
-            yScale.domain([0, d3.max(configGraph.data, computeMaxJours)]);
+            yScale.domain([
+                0, 
+               250
+            ]);
 
             svg.append("text")
                 .attr("class", "title")
@@ -415,6 +415,36 @@
                     .attr("style", style)
             };
 
+            var legendRectSize = 18;
+            var legendSpacing = 30;
+
+            function makeLegend(configGraph) {
+                var legend = svg//.selectAll('.legend')
+                    // .data(COLORS)
+                    // .enter()
+                    .append('g')
+                    .attr('class', 'legend')
+                    .attr('transform', (a,b,c) => {
+                        console.log(a)
+                        console.log(b)
+                        console.log(c)
+                        var height = svg.style("height");
+                        var y = parseInt(height) - legendRectSize - legendSpacing;
+                        return 'translate(100, ' + y + ')';
+                    });
+
+                legend.append('rect')
+                    .attr('width', legendRectSize)
+                    .attr('height', legendRectSize)
+                    .style('fill', COLORS.lectra_red)
+                    .style('stroke', "white");                                                 // NEW
+
+                legend.append('text')
+                    .attr('x', legendRectSize + 5)
+                    .attr('y', legendRectSize - 5)
+                    .text("Prise en charge");
+            }
+
             function animateChart(configGraph) {
                 d3.selectAll(".bar")
                     .on("mouseover", function () {
@@ -447,7 +477,11 @@
                 computePath(configGraph.data, item => item.x, item => item.y.lines[0]),
                 linesGroup
             );
-            drawPolyline("fill:none; stroke:" + configGraph.colors.seuilMin + " ;stroke-width:2; stroke-dasharray:12,8", computePath(configGraph.data, item => item.x, item => item.y.lines[1]), linesGroup);
+            drawPolyline("fill:none; stroke:" + configGraph.colors.seuilMin + " ;stroke-width:2; stroke-dasharray:12,8",
+                computePath(configGraph.data, item => item.x, item => item.y.lines[1]),
+                linesGroup
+            );
+            makeLegend(configGraph);
             d3.selectAll("text").attr("fill", "#ffffff");
             animateChart(configGraph);
         };
